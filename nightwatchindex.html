@@ -8,6 +8,8 @@
         background-color: #33ffd3;
     }
     </style>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.1/socket.io.js' ></script>
+
 </head>
 
 <body onload="startGame()">
@@ -20,6 +22,16 @@
     <script>
        
         var myGamePiece;
+        var gamePieces = {}
+
+        var socket = io('http://nightwatch-vqjojbtzys.now.sh')
+        socket.on('move', function(data) {
+            console.log("move received:")
+            console.log(data)
+            // This is where we parse the data object for the new box to draw
+
+            // socket.emit('moved')
+        });
 
         function startGame() {
              myGameArea.start();
@@ -79,36 +91,10 @@
          myGamePiece.update();
         }
 
-        function moveup() {
-            myGamePiece.speedY = -1; 
-        }
-
-        function movedown() {
-         myGamePiece.speedY = 1; 
-        }
-
-        function moveleft() {
-         myGamePiece.speedX = -1;
-        }
-
-        function moveright() {
-         myGamePiece.speedX = 1;
-        }
-
-        function clearmove() {
-         myGamePiece.speedX = 0;
-         myGamePiece.speedY = 0; 
-        }
 
     </script> 
     </div>
 
-    <div style="text-align:center;width:700px;">
-        <button onmousedown="moveup()" onmouseup="clearmove()" ontouchstart="moveup()">UP</button><br><br>
-        <button onmousedown="moveleft()" onmouseup="clearmove()" ontouchstart="moveleft()">LEFT</button>
-        <button onmousedown="moveright()" onmouseup="clearmove()" ontouchstart="moveright()">RIGHT</button><br><br>
-        <button onmousedown="movedown()" onmouseup="clearmove()" ontouchstart="movedown()">DOWN</button>
-    </div>
-
+   
 </body>
 </html>
