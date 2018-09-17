@@ -53,7 +53,8 @@
             this.canvas.height = 550;
             this.context = this.canvas.getContext("2d");
             document.body.insertBefore(this.canvas, document.body.childNodes[0]);
-            this.interval = setInterval(updateGameArea, 20);
+            this.interval = setInterval(updateGameArea, getRandomInt(25,5));
+            this.interval2 = setInterval(updateRefresh, getRandomInt(5000,1000));
             window.addEventListener('keydown', function (e) {
              myGameArea.keys = (myGameArea.keys || []);
              myGameArea.keys [e.keyCode] = true;
@@ -68,6 +69,12 @@
          }
         }
 
+        function updateRefresh() {
+            clearInterval(myGameArea.interval);
+            clearInterval(myGameArea.interval2);
+            myGameArea.interval = setInterval(updateGameArea, getRandomInt(25,5));
+            myGameArea.interval2 = setInterval(updateRefresh, getRandomInt(5000,1000));
+        }
 
         function startGame() {
              myGameArea.start();
@@ -129,6 +136,11 @@
                 color += letters[Math.floor(Math.random() * 16)];
             }
             return color;
+        }
+
+        function getRandomInt(max,min) {
+            if (min == null || min == undefined) { min = 0 }
+            return Math.floor(Math.random() * Math.floor(max-min) + min)
         }
 
     </script> 
