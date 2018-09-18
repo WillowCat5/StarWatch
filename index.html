@@ -30,7 +30,12 @@
         var gamePieces = { };
         let myColor = getRandomColor();
 
-        var socket = io('https://nightwatch-tdddrvzivy.now.sh')
+        var socket = io('//:3000')
+        socket.on('announce', () => {
+            //console.log("announce received")
+            var myGamePiece = gamePieces[myUUID];
+            socket.emit('move',{ uuid: myUUID, x: myGamePiece.x, y: myGamePiece.y, color: myColor });
+        })
         socket.on('moved', function(data) {
             //console.log("move received:");
             //console.log(data);
@@ -43,6 +48,12 @@
             }
             // socket.emit('moved')
         });
+        socket.on('remove', function(data) {
+            // We should make some pretty animation here
+            if (typeof gamePieces[data.uuid] != 'undefined') {
+                delete gamePieces[data.uuid];
+            }
+        })
 
 
 
@@ -57,11 +68,11 @@
             this.interval2 = setInterval(updateRefresh, getRandomInt(5000,1000));
             window.addEventListener('keydown', function (e) {
              myGameArea.keys = (myGameArea.keys || []);
-             myGameArea.keys [e.keyCode] = true;
+             myGameArea.keys[e.keyCode] = true;
              e.preventDefault();
             })
             window.addEventListener('keyup', function (e) {
-             myGameArea.keys [e.keyCode] = false;
+             myGameArea.keys[e.keyCode] = false;
             })
          },
          clear : function() {
