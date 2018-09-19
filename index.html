@@ -53,8 +53,8 @@
             this.context = this.canvas.getContext("2d");
             document.body.insertBefore(this.canvas, document.body.childNodes[0]);
             document.body.style.backgroundImage = "url('https://d2v9y0dukr6mq2.cloudfront.net/video/thumbnail/Hme4C4_7iosf3emf/stars-in-the-sky-looped-animation-beautiful-night-with-twinkling-flares-hd-1080_sr8wih9v__F0000.png')";
-            this.interval = setInterval(updateGameArea, getRandomInt(25));
-            this.interval2 = setInterval(updaterefresh, getRandomInt(10));
+            this.interval = setInterval(updateGameArea, getRandomInt(25,5));
+            this.interval2 = setInterval(updateRefresh, getRandomInt(5000,1000));
             window.addEventListener('keydown', function (e) {
              myGameArea.keys = (myGameArea.keys || []);
              myGameArea.keys [e.keyCode] = true;
@@ -69,11 +69,12 @@
          }
         }
 
-        function updaterefresh() {
-            clearInterval(myGameArea.interval)
-            myGameArea.interval = setInterval(updateGameArea, getRandomInt(25));
+        function updateRefresh() {
+            clearInterval(myGameArea.interval);
+            clearInterval(myGameArea.interval2);
+            myGameArea.interval = setInterval(updateGameArea, getRandomInt(25,5));
+            myGameArea.interval2 = setInterval(updateRefresh, getRandomInt(5000,1000));
         }
-
 
         function startGame() {
              myGameArea.start();
@@ -136,8 +137,9 @@
             return color;
         }
 
-        function getRandomInt(max) {
-         return Math.floor(Math.random() * Math.floor(max-5)+5);
+        function getRandomInt(max,min) {
+            if (min == null || min == undefined) { min = 0 }
+            return Math.floor(Math.random() * Math.floor(max-min) + min)
         }
 
     </script> 
