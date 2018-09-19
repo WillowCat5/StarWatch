@@ -30,7 +30,8 @@
         var gamePieces = { };
         let myColor = getRandomColor();
 
-        var socket = io('//:3000')
+        //var socket = io('//:3000') // for localhost testing
+        var socket = io('https://nightwatch-sohysxkggn.now.sh')
         socket.on('announce', () => {
             //console.log("announce received")
             var myGamePiece = gamePieces[myUUID];
