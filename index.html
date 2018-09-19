@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <style>
     canvas {
-        border:1px solid #00ccff;
-        background-color: #000157;
+        border:1px solid rgb(199, 241, 237);
         position: absolute; 
         top: 50%;
         left: 50%;
@@ -19,7 +18,7 @@
 
 <body onload="startGame()">
 
-    <header style= "text-align: center; font-size: bolder;">Night Watch</header>
+    <header style= "text-align: center; font-size: bolder; color: rgb(199, 241, 237)">Night Watch</header>
     
     <script>
        
@@ -59,12 +58,13 @@
 
 
         var myGameArea = {
-         canvas : document.createElement("canvas"),
+         canvas : document.createElement("canvas"), 
          start : function() {
-            this.canvas.width = 700;
+            this.canvas.width = 1225;
             this.canvas.height = 550;
             this.context = this.canvas.getContext("2d");
             document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+            document.body.style.backgroundImage = "url('https://d2v9y0dukr6mq2.cloudfront.net/video/thumbnail/Hme4C4_7iosf3emf/stars-in-the-sky-looped-animation-beautiful-night-with-twinkling-flares-hd-1080_sr8wih9v__F0000.png')";
             this.interval = setInterval(updateGameArea, getRandomInt(25,5));
             this.interval2 = setInterval(updateRefresh, getRandomInt(5000,1000));
             window.addEventListener('keydown', function (e) {
@@ -90,7 +90,7 @@
 
         function startGame() {
              myGameArea.start();
-             gamePieces[myUUID] = new component(30, 30, myColor, 325, 20);
+             gamePieces[myUUID] = new component(30, 30, myColor, 595, 20);
              socket.emit('move',{ uuid: myUUID, x: gamePieces[myUUID].x, y: gamePieces[myUUID].y, color: myColor });
         }
 
@@ -131,7 +131,6 @@
             for (var uuid in gamePieces) {
                 gamePieces[uuid].update();
             }
-         //myGamePiece.update();
         }
 
         function uuidv4() {
