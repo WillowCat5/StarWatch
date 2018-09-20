@@ -5,12 +5,11 @@ const port = process.env.PORT || 3000;
 var whosit;
 //var gamepieces = {};
 var taggable = true;
+var clearTaggable;
 
 function onConnection(socket) {
 	//console.log('Connection received: ' + socket.request.connection.remoteAddress + ":" + socket.request.connection.remotePort);
 	socket.broadcast.emit('announce', {} )
-
-	socket.taggable = true;
 
 	if (whosit) {
 		socket.emit('it', { "uuid": whosit } )
@@ -31,10 +30,10 @@ function onConnection(socket) {
 
 	socket.on('tagged', (data) => {
 		if (data.olduuid && data.newuuid && getTaggable()) {
-			taggable = false;
-			setInterval(function() { setTaggable(); }, 3000);
+			setTaggable(false);
 			whosit = data.newuuid; 
 			io.emit('it', { "uuid" : data.newuuid })
+			setTimeout(function() { setTaggable(true); },3000);
 		}
 	})
 
@@ -47,8 +46,13 @@ function onConnection(socket) {
 function getTaggable() {
 	return taggable;
 }
-function setTaggable() {
-	taggable = true;
+function setTaggable(value) {
+	if (value != undefined) {
+		taggable = value;
+	} else { 
+		taggable = true; 
+	}
+	//console.log('Taggable: ' + taggable);
 }
 
 io.on('connection', onConnection);

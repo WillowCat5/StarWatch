@@ -45,9 +45,12 @@
         let imit = false;
         let pieceWidth = 30;
         let pieceHeight = 30;
+        let itfilla = '#aa0000';
+        let itfillb = '#99ff00';
+        var itfill = itfilla;
 
-        var socket = io('//:3000') // for localhost testing
-        //var socket = io('https://nightwatch-cfzmvavibe.now.sh')
+        //var socket = io('//:3000') // for localhost testing
+        var socket = io('https://nightwatch-server.now.sh')
         socket.on('announce', () => {
             //console.log("announce received")
             var myGamePiece = gamePieces[myUUID];
@@ -66,6 +69,8 @@
             } else {
                 imit = false;
             }
+            let flashIt = setInterval( function() { changeItColor() }, 100);
+            setTimeout(function() { clearInterval(flashIt); itfill = itfilla; }, 3000);
         })
 
         socket.on('moved', function (data) {
@@ -92,8 +97,8 @@
         var myGameArea = {
             canvas: document.createElement("canvas"),
             start: function () {
-                //this.canvas.width = 1225;
-                //this.canvas.height = 1225;
+                this.canvas.width = 1280;
+                this.canvas.height = 720;
                 this.context = this.canvas.getContext("2d");
                 document.body.insertBefore(this.canvas, document.body.childNodes[0]);
                 //document.body.style.backgroundImage = "url('https://d2v9y0dukr6mq2.cloudfront.net/video/thumbnail/Hme4C4_7iosf3emf/stars-in-the-sky-looped-animation-beautiful-night-with-twinkling-flares-hd-1080_sr8wih9v__F0000.png')";
@@ -109,8 +114,8 @@
                 })
             },
             clear: function () {
-                this.canvas.height = this.canvas.clientHeight * 0.95;
-                this.canvas.width = this.canvas.clientWidth * 0.95;
+                //this.canvas.height = this.canvas.clientHeight * 0.95;
+                //this.canvas.width = this.canvas.clientWidth * 0.95;
                 let width = this.canvas.width;
                 let height = this.canvas.height;
                 //console.log("w: " + width + " h: " + height);
@@ -143,20 +148,33 @@
             this.speedY = 0;
             this.x = x;
             this.y = y;
-            this.update = function (it) {
+            this.update = function (it,itcolor) {
                 ctx = myGameArea.context;
                 ctx.fillStyle = color;
                 ctx.fillRect(this.x, this.y, this.width, this.height);
                 if (it) {
-                    ctx.fillStyle = "#dd0000";
+                    ctx.fillStyle = itcolor;
                     let ptf = 5;
                     ctx.fillRect(this.x + (pieceWidth / ptf), this.y + (pieceHeight / ptf), this.width - ((
                         pieceWidth / ptf) * 2), this.height - ((pieceWidth / ptf) * 2));
                 }
             }
             this.newPos = function () {
-                this.x += this.speedX;
-                this.y += this.speedY;
+                if (this.x + this.speedX + pieceWidth < 0 ) {
+                    this.x += myGameArea.canvas.width + pieceWidth;
+                } else if (this.x + this.speedX > myGameArea.canvas.width) {
+                    this.x -= myGameArea.canvas.width + pieceWidth;
+                } else {
+                    this.x += this.speedX;
+                }
+                if (this.y + this.speedY + pieceHeight < 0) {
+                    this.y += myGameArea.canvas.height + pieceHeight;
+                } else if (this.y + this.speedY > myGameArea.canvas.height) {
+                    this.y -= myGameArea.canvas.height  + pieceHeight;
+                } else {
+                    this.y += this.speedY;
+                }
+
             }
         }
 
@@ -188,19 +206,27 @@
                 //console.log(myGamePiece);
             }
 
-            myGamePiece.newPos();
+            myGamePiece.newPos()
 
             for (var uuid in gamePieces) {
                 if (uuid != myUUID) {
-                    if (checkOverlap(myGamePiece, gamePieces[uuid])) {
+                    if (imit && checkOverlap(myGamePiece, gamePieces[uuid])) {
                         //console.log('overlap! ' + myUUID + " - " + uuid);
                         socket.emit('tagged', {
                             olduuid: myUUID,
                             newuuid: uuid
-                        })
+                         })
                     }
                 }
-                gamePieces[uuid].update(uuid == itUUID);
+                gamePieces[uuid].update(uuid == itUUID,itfill);
+            }
+        }
+
+        function changeItColor() {
+            if (itfill === itfilla) {
+                itfill = itfillb;
+            } else {
+                itfill = itfilla;
             }
         }
 
