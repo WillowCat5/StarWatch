@@ -1,148 +1,240 @@
 <html>
-
 <head>
-<title>Night Watch</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+    <Title>Star Watch</Title>
     <style>
-    canvas {
+        body {
+            margin: 0%;
+        }
+        #videoStars {
+            position: fixed;
+            z-index: -50;
+            right: 0;
+            bottom: 0;
+            min-width: 100%;
+            min-height: 100%;
+        }
+        header {
+            padding-top: 6px;
+            text-align: center;
+            font-size: bolder;
+            color: rgb(199, 241, 237)
+        }
+        canvas {
         border:1px solid rgb(199, 241, 237);
         position: absolute; 
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
+        width: 95vw;
+        height: 90vh;
     }
     </style>
-    <script src='https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.1/socket.io.js' ></script>
-
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.1/socket.io.js'></script>
 </head>
 
 <body onload="startGame()">
+    <video autoplay loop muted id="videoStars">
+        <source src="starss.mp4" type="video/mp4">
+    </video>
 
-    <header style= "text-align: center; font-size: bolder; color: rgb(199, 241, 237)">Night Watch</header>
-    
-    <script>
-       
+    <header>Star Watch</header>
 
-       
-        //var myGamePiece;
-        let myUUID = uuidv4();
-        var gamePieces = { };
-        let myColor = getRandomColor();
+<script>
+var myGamePiece;
+var gamePieces = {};
+let myColor = getRandomColor();
+let myUUID = uuidv4();
+var itUUID;
+let imit = false;
 
-        var socket = io('https://nightwatch-tdddrvzivy.now.sh')
-        socket.on('moved', function(data) {
-            //console.log("move received:");
-            //console.log(data);
-            // This is where we parse the data object for the new box to draw
-            if (typeof gamePieces[data.uuid] != "undefined") {
-                gamePieces[data.uuid].x = data.x;
-                gamePieces[data.uuid].y = data.y;
-            } else {
-                gamePieces[data.uuid] = new component(30, 30, data.color, data.x, data.y);
-            }
-            // socket.emit('moved')
+// var socket = io('http://nightwatch-server.now.sh')
+var socket = io('//:3000')
+
+socket.on('announce', () => {
+var myGamePiece = gamePieces[myUUID];
+    socket.emit('move', {
+        uuid: myUUID,
+        x: myGamePiece.x,
+        y: myGamePiece.y,
+        color: myColor
+    });
+})
+
+socket.on('it', (data) => {
+    itUUID = data.uuid;
+    if (itUUID == myUUID) {
+        imit = true;
+    } else {
+        imit = false;
+    }
+})
+
+socket.on('moved', function (data) {
+    if (typeof gamePieces[data.uuid] != "undefined") {
+    gamePieces[data.uuid].x = data.x;
+    gamePieces[data.uuid].y = data.y;
+} else {
+    gamePieces[data.uuid] = new component(30, 30, data.color, data.x, data.y);
+}
+})
+
+socket.on('remove', function (data) {
+    if (typeof gamePieces[data.uuid] != 'undefined') {
+        delete gamePieces[data.uuid];
+    }
+})
+
+function startGame() {
+    myGameArea.start();
+    myGamePiece = new component(30, 30, myColor, 595, 20);
+    gamePieces[myUUID] = myGamePiece
+    socket.emit('move', {
+        uuid: myUUID,
+        x: myGamePiece.x,
+        y: myGamePiece.y,
+        color: myColor
+    });
+}
+
+var myGameArea = {
+ canvas : document.createElement("canvas"), 
+ start : function() {
+    this.canvas.width = 1225;
+    this.canvas.height = 550;
+    this.context = this.canvas.getContext("2d");
+    document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+    this.interval = setInterval(updateGameArea, getRandomInt(25,5));
+    this.interval2 = setInterval(updateRefresh, getRandomInt(5000,1000));
+    window.addEventListener('keydown', function (e) {
+     myGameArea.keys = (myGameArea.keys || []);
+     myGameArea.keys[e.keyCode] = true;
+     e.preventDefault();
+    })
+    window.addEventListener('keyup', function (e) {
+     myGameArea.keys [e.keyCode] = false;
+    })
+ },
+ clear : function() {
+     let width = this.canvas.width;
+     let height = this.canvas.height;
+     this.context.globalCompositeOperation = 'source-over';
+     this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+ }
+}
+
+function updateRefresh() {
+    clearInterval(myGameArea.interval);
+    clearInterval(myGameArea.interval2);
+    myGameArea.interval = setInterval(updateGameArea, getRandomInt(25,5));
+    myGameArea.interval2 = setInterval(updateRefresh, getRandomInt(5000,1000));
+}
+
+function component(width, height, color, x, y) {
+    this.gamearea = myGameArea;
+    this.width = width;
+    this.height = height;
+    this.speedX = 0;
+    this.speedY = 0;    
+    this.x = x;
+    this.y = y;    
+    this.update = function(dot) {
+        ctx = myGameArea.context;
+        // ctx.globalCompositeOperation = 'source-over';
+        ctx.fillStyle = color;
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+        if (dot) {
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.beginPath();
+            ctx.arc(this.x + this.width/2,this.y + this.height/2,10,0,2*Math.PI);
+            ctx.fill();
+            ctx.globalCompositeOperation = 'source-over';
+        }
+    }
+    this.newPos = function() {
+        if (this.x + this.speedX < 0 ) {
+            this.x = 5;
+        } else if (this.x + this.speedX + 30 > myGameArea.canvas.width) {
+            this.x = myGameArea.canvas.width - 30 - 5;
+        } else {
+            this.x += this.speedX;
+        }
+        if (this.y + this.speedY < 0 ) {
+            this.y = 5;
+        } else if (this.y + this.speedY + 30 > myGameArea.canvas.height) {
+            this.y = myGameArea.canvas.height - 30 - 5;
+        } else {
+            this.y += this.speedY;
+        }
+    }
+}
+
+function updateGameArea() {
+    myGameArea.clear();
+    var myGamePiece = gamePieces[myUUID];
+    myGamePiece.speedX = 0;
+    myGamePiece.speedY = 0;    
+    if (myGameArea.keys && myGameArea.keys [37]) {myGamePiece.speedX = -1; }
+    if (myGameArea.keys && myGameArea.keys [39]) {myGamePiece.speedX = 1; }
+    if (myGameArea.keys && myGameArea.keys [38]) {myGamePiece.speedY = -1; }
+    if (myGameArea.keys && myGameArea.keys [40]) {myGamePiece.speedY = 1; }
+    if (myGamePiece.speedX != 0 || myGamePiece.speedY != 0){
+        socket.emit('move', {
+            uuid:myUUID,
+            x: myGamePiece.x,
+            y: myGamePiece.y,
+            color: myColor
         });
+    }
+    myGamePiece.newPos();    
 
-
-
-        var myGameArea = {
-         canvas : document.createElement("canvas"), 
-         start : function() {
-            this.canvas.width = 1225;
-            this.canvas.height = 550;
-            this.context = this.canvas.getContext("2d");
-            document.body.insertBefore(this.canvas, document.body.childNodes[0]);
-            document.body.style.backgroundImage = "url('https://d2v9y0dukr6mq2.cloudfront.net/video/thumbnail/Hme4C4_7iosf3emf/stars-in-the-sky-looped-animation-beautiful-night-with-twinkling-flares-hd-1080_sr8wih9v__F0000.png')";
-            this.interval = setInterval(updateGameArea, getRandomInt(25,5));
-            this.interval2 = setInterval(updateRefresh, getRandomInt(5000,1000));
-            window.addEventListener('keydown', function (e) {
-             myGameArea.keys = (myGameArea.keys || []);
-             myGameArea.keys [e.keyCode] = true;
-             e.preventDefault();
-            })
-            window.addEventListener('keyup', function (e) {
-             myGameArea.keys [e.keyCode] = false;
-            })
-         },
-         clear : function() {
-             this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
-         }
-        }
-
-        function updateRefresh() {
-            clearInterval(myGameArea.interval);
-            clearInterval(myGameArea.interval2);
-            myGameArea.interval = setInterval(updateGameArea, getRandomInt(25,5));
-            myGameArea.interval2 = setInterval(updateRefresh, getRandomInt(5000,1000));
-        }
-
-        function startGame() {
-             myGameArea.start();
-             gamePieces[myUUID] = new component(30, 30, myColor, 595, 20);
-             socket.emit('move',{ uuid: myUUID, x: gamePieces[myUUID].x, y: gamePieces[myUUID].y, color: myColor });
-        }
-
-        function component(width, height, color, x, y) {
-         this.width = width;
-         this.height = height;
-         this.speedX = 0;
-         this.speedY = 0;
-         this.x = x;
-         this.y = y;    
-         this.update = function() {
-             ctx = myGameArea.context;
-             ctx.fillStyle = color;
-             ctx.fillRect(this.x, this.y, this.width, this.height);
-         }
-         this.newPos = function() {
-             this.x += this.speedX;
-             this.y += this.speedY; 
-         } 
-        }
-
-        function updateGameArea() {
-            myGameArea.clear();
-            var myGamePiece = gamePieces[myUUID];
-            myGamePiece.speedX = 0;
-            myGamePiece.speedY = 0; 
-            if (myGameArea.keys && myGameArea.keys [37]) {myGamePiece.speedX = -1; }
-            if (myGameArea.keys && myGameArea.keys [39]) {myGamePiece.speedX = 1; }
-            if (myGameArea.keys && myGameArea.keys [38]) {myGamePiece.speedY = -1; }
-            if (myGameArea.keys && myGameArea.keys [40]) {myGamePiece.speedY = 1; }
-
-            if (myGamePiece.speedX != 0 || myGamePiece.speedY != 0) {
-                socket.emit('move',{ uuid: myUUID, x: myGamePiece.x, y: myGamePiece.y, color: myColor });
-            }     
-
-            myGamePiece.newPos();
-
-            for (var uuid in gamePieces) {
-                gamePieces[uuid].update();
+    for (var uuid in gamePieces) {     
+        if (uuid != myUUID) {
+                    if (imit && checkOverlap(myGamePiece, gamePieces[uuid])) {
+                        socket.emit('tagged', {
+                            olduuid: myUUID,
+                            newuuid: uuid
+                         })
+                    }
+                }
+                gamePieces[uuid].update(uuid == itUUID);
             }
+}
+
+function checkOverlap(piece1, piece2) {
+    if (piece1.x > piece2.x + 30 || piece2.x > piece1.x + 30) {
+        return false;
+    }
+    if (piece1.y > piece2.y + 30 || piece2.y > piece1.y + 30) {
+        return false;
+    }
+    return true;
+}
+
+function getRandomColor() {
+  var letters = '0123456789ABCDEF';
+  var color = '#';
+  for (var i = 0; i < 6; i++) {
+    color += letters[Math.floor(Math.random() * 16)];
+  }
+  return color;
+}
+
+function getRandomInt(max,min) {
+    if (min == null || min == undefined) { min = 0 }
+    return Math.floor(Math.random() * Math.floor(max-min) + min)
+}
+
+function uuidv4() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+                var r = Math.random() * 16 | 0,
+                    v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
         }
 
-        function uuidv4() {
-          return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,        function(c) {
-            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-           });
-        }
-        
-        function getRandomColor() {
-            var letters = '0123456789ABCDEF';
-            var color = '#';
-            for (var i = 0; i < 6; i++) {
-                color += letters[Math.floor(Math.random() * 16)];
-            }
-            return color;
-        }
+</script>
 
-        function getRandomInt(max,min) {
-            if (min == null || min == undefined) { min = 0 }
-            return Math.floor(Math.random() * Math.floor(max-min) + min)
-        }
-
-    </script> 
-    
 </body>
 </html>
