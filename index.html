@@ -46,14 +46,16 @@
         let myColor = getRandomColor();
         var itUUID;
         let imit = false;
-        let pieceWidth = 40;
-        let pieceHeight = 40;
+        let pieceWidth = 30;
+        let pieceHeight = 30;
         let itfilla = '#aa0000';
         let itfillb = '#99ff00';
         var itfill = itfilla;
 
-        //var socket = io('//:3000') // for localhost testing
-        var socket = io('https://nightwatch-server.now.sh')
+        var cango = true;
+
+        var socket = io('//:3000') // for localhost testing
+     //var socket = io('https://nightwatch-server.now.sh')
         socket.on('announce', () => {
             //console.log("announce received")
             var myGamePiece = gamePieces[myUUID];
@@ -105,8 +107,8 @@
                 this.context = this.canvas.getContext("2d");
                 document.body.insertBefore(this.canvas, document.body.childNodes[0]);
                 //document.body.style.backgroundImage = "url('https://d2v9y0dukr6mq2.cloudfront.net/video/thumbnail/Hme4C4_7iosf3emf/stars-in-the-sky-looped-animation-beautiful-night-with-twinkling-flares-hd-1080_sr8wih9v__F0000.png')";
-                this.interval = setInterval(updateGameArea, getRandomInt(25, 5));
-                this.interval2 = setInterval(updateRefresh, getRandomInt(5000, 1000));
+                this.interval = setInterval(updateGameArea, getRandomInt(5, 1));
+                this.interval2 = setInterval(updateRefresh, getRandomInt(50, 10));
                 window.addEventListener('keydown', function (e) {
                     e.preventDefault();
                     myGameArea.keys = (myGameArea.keys || []);
@@ -175,8 +177,8 @@
         function updateRefresh() {
             clearInterval(myGameArea.interval);
             clearInterval(myGameArea.interval2);
-            myGameArea.interval = setInterval(updateGameArea, getRandomInt(25, 5));
-            myGameArea.interval2 = setInterval(updateRefresh, getRandomInt(5000, 1000));
+            myGameArea.interval = setInterval(updateGameArea, getRandomInt(5, 1));
+            myGameArea.interval2 = setInterval(updateRefresh, getRandomInt(50, 10));
         }
 
         function startGame() {
@@ -193,6 +195,7 @@
         function component(width, height, color, x, y) {
             this.width = width;
             this.height = height;
+            this.radius = width/2; // for circles
             this.speedX = 0;
             this.speedY = 0;
             this.x = x;
@@ -201,23 +204,36 @@
             this.shipImage.src = 'ship.jpg';
             this.update = function (it,itcolor) {
                 ctx = myGameArea.context;
+
+                // A square
+                //ctx.fillRect(this.x, this.y, this.width, this.height);
+
+                // A circle
+                let radius = this.radius;
+                ctx.beginPath();
+                ctx.arc(this.x,this.y,radius,0,2*Math.PI)
                 ctx.fillStyle = color;
+                ctx.fill();
 
-//                ctx.fillRect(this.x, this.y, this.width, this.height);
-
-                ctx.drawImage(this.shipImage, 0, 0, this.shipImage.width, this.shipImage.height,
-                             this.x, this.y, this.width, this.height);
+                // A ship
+                //ctx.drawImage(this.shipImage, 0, 0, this.shipImage.width, this.shipImage.height,this.x, this.y, this.width, this.height);
 
                 if (it) {
 
                     // This gives us a square
-                    /*
+                    
                     ctx.fillStyle = itcolor;
                     let ptf = 5;
-                    ctx.fillRect(this.x + (pieceWidth / ptf), this.y + (pieceHeight / ptf), this.width - ((
-                        pieceWidth / ptf) * 2), this.height - ((pieceWidth / ptf) * 2));
+                    
+                    // A circle in the middle
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, ptf, 0, 2*Math.PI)
+                    ctx.fill();
+                    // A square in the middle
+                    //ctx.fillRect(this.x + (pieceWidth / ptf), this.y + (pieceHeight / ptf), this.width - ((
+                    //    pieceWidth / ptf) * 2), this.height - ((pieceWidth / ptf) * 2));
 
-                        */
+                        
                     /* This creates a hole in the ship */
                     /*
                     ctx.globalCompositeOperation = 'destination-out'
@@ -310,7 +326,7 @@
             // end keypress checks
             }
 
-            if (myGamePiece.speedX != 0 || myGamePiece.speedY != 0) {
+            if (cango && (myGamePiece.speedX != 0 || myGamePiece.speedY != 0)) {
                 socket.emit('move', {
                     uuid: myUUID,
                     x: myGamePiece.x,
@@ -318,18 +334,25 @@
                     color: myColor
                 });
                 //console.log(myGamePiece);
+            } else if (!cango && myGamePiece.speedX == 0 && myGamePiece.speedY == 0) { 
+                cango = true;
+            } else if (!cango) {
+                myGamePiece.speedX = 0;
+                myGamePiece.speedY = 0;
             }
-
             myGamePiece.newPos()
 
             for (var uuid in gamePieces) {
                 if (uuid != myUUID) {
-                    if (imit && checkOverlap(myGamePiece, gamePieces[uuid])) {
+                    if (checkOverlap(myGamePiece, gamePieces[uuid])) {
                         //console.log('overlap! ' + myUUID + " - " + uuid);
+                        if (imit) {
                         socket.emit('tagged', {
                             olduuid: myUUID,
                             newuuid: uuid
                          })
+                        } 
+                        cango = true;
                     }
                 }
                 gamePieces[uuid].update(uuid == itUUID,itfill);
@@ -345,7 +368,11 @@
         }
 
         function checkOverlap(piece1, piece2) {
+
+            // This is for square collision detection
+
             //console.log("checking for overlap")
+            /*
             if (piece1.x > piece2.x + pieceWidth || piece2.x > piece1.x + pieceWidth) {
                 //console.log("no overlap side-to-side");
                 return false;
@@ -355,6 +382,17 @@
                 return false;
             }
             return true;
+            */
+            // This is for circle collision detection
+
+            let dx = piece1.x - piece2.x;
+            let dy = piece1.y - piece2.y;
+            let distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance < piece1.radius + piece2.radius)  {
+                return true
+            } else { 
+                return false
+            }
         }
 
 
